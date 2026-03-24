@@ -20,139 +20,166 @@ import java.util.Locale;
 public class CompProg1 {
     public static Scanner scanner = new Scanner(System.in); //Scanner Global Declaration
     
-    public static double sssDeduct(double gross){
-        double deduct = 0;
-        if(gross > 25000.00){
-            gross = 25000.00;
+    public static double sssDeduct(double gross){ //Reads the CSV file to compare the sent gross to determine SSS deduction
+        double deduct = 0; //Declares deduct which will store the calculated deduction
+        if(gross > 25000.00){ //Checks if the gross salary exceeds the highest bracket
+            gross = 25000.00; //Places a cap on the contribution once the gross salary exceeds the highest bracket
         }
         String data; //Declared string to store the line from CSV
+        //Try Catch error handler used
+        //Buffered Reader used
+        //Used Relative Address of File
         try (BufferedReader reader = new BufferedReader(new FileReader("resources/SSS Contribution Brackets.csv"))) {
+            //While loop to read the whole file
+            //Simultaneously stores the currently read line to String data
+            //Will loop until it reaches the end of the line, where it would equal null
             while ((data = reader.readLine()) != null) {
-                String[] details = data.split(",");
-                double lower = Double.parseDouble(details[0]);
-                double higher = Double.parseDouble(details[1]);
-                if((lower<=gross)&&(higher>=gross)){
-                    deduct = Double.parseDouble(details[2]);
+                String[] details = data.split(","); //Split will check the line for "," and will split the line there
+                double lower = Double.parseDouble(details[0]); //Assigns the lower value of the bracket to lower
+                double higher = Double.parseDouble(details[1]); //Assigns the higher value of the bracket to higher
+                if((lower<=gross)&&(higher>=gross)){ //Checks which bracket the gross salary is in
+                    deduct = Double.parseDouble(details[2]); //Assigns the found deduction in the CSV file to deduct
                 }
             }
         }
         catch (IOException e) { //Catch error handler
             System.err.println("Error reading file: " + e.getMessage()); //Prints error if it occurs
         }
-        return deduct;
+        return deduct; //Returns the deduction
     }
     
-    public static double phDeduct(double gross){
-        double deduct = 0;
-        if(gross<=10000.00){
+    public static double phDeduct(double gross){ //Calculates the PhilHealth tax deduction
+        double deduct;  //Declares deduct which will store the calculated deduction
+        if(gross<=10000.00){ //Checks if the gross salary is in a lower bracket, which has a lower tax deduction
             deduct = 10000 * 0.015;
         }
-        else if(gross>=60000.00){
+        else if(gross>=60000.00){ //Checks if the gross salary exceeds the highest bracket, this places a cap on the tax deduction
             deduct = 60000 * 0.015;
         }
-        else{
+        else{ //If not in the lowest bracket or exceeds the highest bracket, computation proceeds as normal
             deduct = gross * 0.015;
         }
-        return deduct;
+        return deduct; //Return deduction
     }
     
-    public static double pagibigDeduct(double gross){
-        double deduct = 0;
-        if(gross>=1000&&gross<=1500){
+    public static double pagibigDeduct(double gross){ //Calculates the Pag-IBIG tax deduction
+        double deduct = 0; //Declares deduct which will store the calculated deduction
+        if(gross>=1000&&gross<=1500){ //Checks if the gross salary is in a lower bracket, which has a lower tax deduction
             deduct = gross * 0.01;
         }
-        else if(gross>1500){
+        else if(gross>1500){ //Checks if the gross salary is in a higher bracket, which has a higher tax deduction
             deduct = gross * 0.02;
         }
-        return Math.min(deduct, 100.00);
+        return Math.min(deduct, 100.00); //Sends either the computed deduction or 100, whichever is lower
     }
     
-    public static double taxDeduct(double gross){
-        double deduct = 0;
+    public static double taxDeduct(double gross){ //Calculates the Withholding tax deduction by comparing taxable salary to the data in the CSV file
+        double deduct = 0; //Declares deduct which will store the calculated deduction
         String data; //Declared string to store the line from CSV
+        //Try Catch error handler used
+        //Buffered Reader used
+        //Used Relative Address of File
         try (BufferedReader reader = new BufferedReader(new FileReader("resources/Withholding Tax Brackets.csv"))) {
+            //While loop to read the whole file
+            //Simultaneously stores the currently read line to String data
+            //Will loop until it reaches the end of the line, where it would equal null
             while ((data = reader.readLine()) != null) {
-                String[] details = data.split(",");
-                double lower = Double.parseDouble(details[0]);
-                double higher = 0+Double.parseDouble(details[1]);
-                if(gross>=666667){
+                String[] details = data.split(","); //Split will check the line for "," and will split the line there
+                double lower = Double.parseDouble(details[0]); //Assigns the first value of the CSV file to lower
+                double higher = 0+Double.parseDouble(details[1]); //Assigns the second value of the CSV file to higher
+                if(gross>=666667){ //Checks if the taxable salary is in the highest bracket
                     higher = gross;
                 }
-                if((lower<=gross)&&(higher>=gross)){
-                    deduct = ((gross-lower)*Double.parseDouble(details[2]))+Double.parseDouble(details[3]);
+                if((lower<=gross)&&(higher>=gross)){ //Checks which bracket the taxable salary is in
+                    deduct = ((gross-lower)*Double.parseDouble(details[2]))+Double.parseDouble(details[3]); //Calculates the deduction based on where the bracket is and assigns it to deduct
                 }
             }
         }
         catch (IOException e) { //Catch error handler
             System.err.println("Error reading file: " + e.getMessage()); //Prints error if it occurs
         }
-        return deduct; 
+        return deduct; //Returns the deduction
     }
     
-    public static double calcHours(LocalTime in, LocalTime out){
-        LocalTime grace = LocalTime.of(8,10);
-        LocalTime cutOff = LocalTime.of(17,0);
-        if(in.isBefore(grace)){
+    public static double calcHours(LocalTime in, LocalTime out){ //Calculates the hours worked for the day based on the time logs sent to this method
+        LocalTime grace = LocalTime.of(8,10); //Declares the grace period
+        LocalTime cutOff = LocalTime.of(17,0); //Declares the cutoff time for the day
+        if(in.isBefore(grace)){ //If the person logged in earlier than the grace period, the log-in is considered to be at 8:00(the earliest accepted time)
             in = LocalTime.of(8, 0);
         }
-        if(out.isAfter(cutOff)){
+        if(out.isAfter(cutOff)){ //If the person logged out later than the cutoff period, the log-out is considered to be at 17:00(the latest accepted time)
             out = cutOff;
         }
-        long minutes = Duration.between(in, out).toMinutes();
-        if(minutes > 60){
+        long minutes = Duration.between(in, out).toMinutes(); //Minutes stores the calculated minutes between the log-in and log-out.
+        if(minutes > 60){ //Deducts the 1-hour lunch period
             minutes -= 60;
         }
-        double hours = minutes /60.0;
-        return Math.min(hours, 8.0);
+        double hours = minutes /60.0; //Converts the minutes back into hours
+        return Math.min(hours, 8.0); //Sends either the computed hours or 8 hours(Max hours worked for the day), which ever is lower.
     }
     
-    public static void processPayroll(String employeeNumber, double rate){
-        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("H:mm");//Hour Format, only 1 H because listed data writes X:00 instead of 0X:00
-        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy"); //Date Format to read dates from file
+    
+    public static void displayResults(double hoursCutoff1, double hoursCutoff2, double rate, LocalDate month, LocalDate monthCutoff){ //Calls the methods to calculate the deductions, then displays all the results.
         DateTimeFormatter cutoffFormat = DateTimeFormatter.ofPattern("MMMM dd "); //Date Format to display month name
+        double sss = sssDeduct((hoursCutoff1 + hoursCutoff2) * rate); //Declares sss that stores the SSS Deduction computed by method sssDeduct
+        double ph = phDeduct((hoursCutoff1 + hoursCutoff2) * rate); //Declares ph that stores the PhilHealth Deduction computed by method phDeduct
+        double pagibig = pagibigDeduct((hoursCutoff1 + hoursCutoff2) * rate); //Declares pagibig that stores the Pag-IBIG Deduction computed by method pagibigDeduct
+        double tax = taxDeduct(((hoursCutoff1 + hoursCutoff2) * rate) - (sss + ph + pagibig)); //Declares tax that stores the Witholding Tax Deduction computed by method taxDeduct
+        System.out.println("\nCutoff Date: " + month.format(cutoffFormat.withLocale(Locale.US)) + "to 15"); //Displays the month and the range of the cutoff
+        System.out.println("Hours Worked 1st cutoff: " + hoursCutoff1); //Displays the amount of hours computed for the cutoff
+        System.out.println("Net Salary(Gross Salary): " + hoursCutoff1 * rate); //Displays the calculated Net Salary(Gross Salary) for the first cutoff
+        System.out.println("\nCutoff Date: " + monthCutoff.format(cutoffFormat.withLocale(Locale.US)) + "to " + month.lengthOfMonth()); //Displays the month and the range of the cutoff
+        System.out.println("Hours Worked 2nd cutoff: " + hoursCutoff2); //Displays the amount of hours computed for the cutoff
+        System.out.println("Gross Salary: " + hoursCutoff2 * rate); //Displays the calculated Gross Salary for the second cutoff
+        System.out.println("SSS Deduction: " + sss); //Displays the calculated SSS Deduction
+        System.out.println("PhilHealth Deduction: " + ph); //Displays the calculated PhilHealth Deduction
+        System.out.println("Pag-IBIG Deduction: " + pagibig); //Displays the calculated Pag-IBIG Deduction
+        System.out.println("Tax Deduction: " + tax); //Displays the calculated Withholding Tax Deduction
+        System.out.println("Total Deductions: " + (sss + ph + pagibig + tax)); //Displays the calculated government Deductions
+        System.out.println("Net Salary: " + ((hoursCutoff2 * rate) - (sss + ph + pagibig + tax))); //Displays the calculated Net Salary
+    }
+    
+    public static void processPayroll(String employeeNumber, double rate){ //Takes the employee number and reads the attendance logs to get the data to process the payroll
+        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("H:mm"); //Hour Format, only 1 H because listed data writes X:00 instead of 0X:00
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy"); //Date Format to read dates from file
         String data; //Declared string to store the line from CSV
-        String startingDate = "2024-06-01";
-        String endDate = "2024-12-31";
-        LocalDate month = LocalDate.parse(startingDate);
-        while(month.isBefore(LocalDate.parse(endDate))){
-        double hoursWorked1 = 0;
-        double hoursWorked2 = 0;
-        LocalDate cutoff = month.plusDays(15);
+        LocalDate month = LocalDate.parse("2024-06-01"); //Declares the start of the first month to check
+        LocalDate cutoff = month.plusDays(15); //Declares the start of the first cutoff relative to the first month
+        double hoursWorked1 = 0; //Declares where to store the calculated hours for the first cutoff
+        double hoursWorked2 = 0; //Declares where to store the calculated hours for the second cutoff
+        //Try Catch error handler used
+        //Buffered Reader used
+        //Used Relative Address of File
         try (BufferedReader reader = new BufferedReader(new FileReader("resources/Attendance Record.csv"))) {
+            //While loop to read the whole file
+            //Simultaneously stores the currently read line to String data
+            //Will loop until it reaches the end of the line, where it would equal null
             while ((data = reader.readLine()) != null) {
-                if(data.contains(employeeNumber)){
-                    String[] details = data.split(",");
-                    LocalDate current = LocalDate.parse(details[3], dateFormat);
-                    if((current.isEqual(month)||current.isAfter(month))&&current.isBefore(cutoff)){
-                        hoursWorked1 += calcHours(LocalTime.parse(details[4], timeFormat),LocalTime.parse(details[5], timeFormat));
-                        }
-                    if((current.isEqual(cutoff)||current.isAfter(cutoff))&&current.isBefore(month.plusMonths(1))){
-                        hoursWorked2 += calcHours(LocalTime.parse(details[4], timeFormat),LocalTime.parse(details[5], timeFormat));
-                        }
-                    }
+                String[] details = data.split(","); //Split will check the line for "," and will split the line there
+                if(details[0].contains("Employee")){ //Skips the first loop if the code detects that the line is reading the header
+                    continue;
                 }
-            System.out.println("\nCutoff Date: " +month.format(cutoffFormat.withLocale(Locale.US)) + "to 15");
-            System.out.println("Hours Worked 1st cutoff: " +hoursWorked1);
-            System.out.println("Gross Salary: " +hoursWorked1*rate);
-            System.out.println("Net Salary: " +hoursWorked1*rate);
-            System.out.println("\nCutoff Date: " +cutoff.format(cutoffFormat.withLocale(Locale.US)) + "to " + month.lengthOfMonth());
-            System.out.println("Hours Worked 2nd cutoff: " +hoursWorked2);
-            System.out.println("Gross Salary: " +hoursWorked2*rate);
-            double sss = sssDeduct((hoursWorked1+hoursWorked2)*rate);
-            System.out.println("SSS Deduction: " +sss);
-            double ph = phDeduct((hoursWorked1+hoursWorked2)*rate);
-            System.out.println("PhilHealth Deduction: " +ph);
-            double pagibig = pagibigDeduct((hoursWorked1+hoursWorked2)*rate);
-            System.out.println("Pag-IBIG Deduction: " +pagibig);
-            double tax = taxDeduct((hoursWorked1+hoursWorked2)*rate);
-            System.out.println("Tax Deduction: " +tax);
-            System.out.println("Total Deductions: " +(sss+ph+pagibig+tax));
-            System.out.println("Net Salary: " +((hoursWorked2*rate)-(sss+ph+pagibig+tax)));
+                LocalDate current = LocalDate.parse(details[3], dateFormat); //Assigns the date of the log to LocalDate current
+                if (current.isAfter(month.plusMonths(1)) || current.isEqual(month.plusMonths(1))){ //Checks if the current month being worked on is correct, if not it adjusts it
+                    displayResults(hoursWorked1,hoursWorked2,rate,month,cutoff); //Displays the results of the previous month before moving on to the next month
+                    month = month.plusMonths(1); //Adjusts the current month to the next one
+                    cutoff = month.plusDays(15); //Adjusts the current cutoff
+                    hoursWorked1 = 0; //Resets hoursWorked1 for the new month
+                    hoursWorked2 = 0; //Resets hoursWorked2 for the new month
+                }
+                if (details[0].contains(employeeNumber)) { //Checks the CSV file for the matching employee number and calls the method "calcHours" to compute the total hours worked
+                    if ((current.isEqual(month) || current.isAfter(month)) && current.isBefore(cutoff)) { //Checks if the hours calculated would be added to the first cutoff
+                        hoursWorked1 += calcHours(LocalTime.parse(details[4], timeFormat), LocalTime.parse(details[5], timeFormat)); //hoursWorked1 stores all the hours calculated for the first cutoff
+                    }
+                    if ((current.isEqual(cutoff) || current.isAfter(cutoff)) && current.isBefore(month.plusMonths(1))) { //Checks if the hours calculated would be added to the second cutoff
+                        hoursWorked2 += calcHours(LocalTime.parse(details[4], timeFormat), LocalTime.parse(details[5], timeFormat)); //hoursWorked1 stores all the hours calculated for the second cutoff
+                    }
+                }  
             }
+            displayResults(hoursWorked1,hoursWorked2,rate,month,cutoff); //Displays the results for the last month since the code exits the loop before displaying the last month
+        }
         catch (IOException e) { //Catch error handler
             System.err.println("Error reading file: " + e.getMessage()); //Prints error if it occurs
-        }
-        month = month.plusMonths(1);
         }
     }
 
@@ -160,18 +187,17 @@ public class CompProg1 {
         double hourlyRate = 0; //Declares double to store hourly rate found in Employee Details
         //Try Catch error handler used
         //Buffered Reader used
-        //Used Absolute Address of File
+        //Used Relative Address of File
         try (BufferedReader reader = new BufferedReader(new FileReader("resources/Employee Details.csv"))) {
                 String data; //Declares string to handle currently read line by Reader
                 //While loop to read the whole file
                 //Simultaneously stores the currently read line to String data
                 //Will loop until it reaches the end of the line, where it would equal null
                 while ((data = reader.readLine()) != null) {
-                    String[] details = data.split(",");
+                    String[] details = data.split(","); //Split will check the line for "," and will split the line there
                     if(details[0].contains(employeeNumber)){ //Checks each line if the thrown employee number matches the data on file
                         //String array declared to handle the splitting of the line
                         //"data" will be split into an array called "details[]"
-                        //Split will check the line for "," and will split the line there
                         System.out.println("----------------------------------\n"); 
                         System.out.println("1. Employee #: " +details[0]); //Displays Employee Number
                         System.out.println("2. Employee Name: " +details[2]+ " " +details[1]); //Displays Employee Name, First name then Last name
@@ -200,15 +226,15 @@ public class CompProg1 {
                         switch(choice2){ //Checks payroll_staff choice 2
                             case "1" -> {
                                 System.out.println("Enter the employee number: ");
-                                String Number = scanner.nextLine(); //Asks for the employee number
-                                double hourRate = employeeDetails(Number); //Stores the hourly rate, sends the employee number
+                                String number = scanner.nextLine(); //Asks for the employee number
+                                double hourRate = employeeDetails(number); //Stores the hourly rate, sends the employee number
                                 if(hourRate >0){ //Searches, Computes, and Displays payroll, throws employee number
-                                    processPayroll(Number,hourRate); //Process the payroll, sends employee number and hourly rate
+                                    processPayroll(number,hourRate); //Process the payroll, sends employee number and hourly rate
                                 }
                             }
                             case "2" -> {
                                     for(int number = 10001;number < 10035;number++){ //counter starting at first employee number
-                                        double hourRate =employeeDetails("" +number); //Stores the hourly rate, sends the employee number
+                                        double hourRate = employeeDetails("" +number); //Stores the hourly rate, sends the employee number
                                         processPayroll("" +number,hourRate); //Process the payroll, sends employee number and hourly rate
                                     }
                             }
@@ -227,18 +253,21 @@ public class CompProg1 {
             switch(choice){//Checks employee choice
                 case "1" -> {//1. Employee Details
                     System.out.println("Enter your employee number: ");
-                    String Number = scanner.nextLine();//Asks for employee number
-                    employeeDetails(Number);//Searches and Displays employee details, throws employee number
+                    String number = scanner.nextLine();//Asks for employee number
+                    employeeDetails(number);//Searches and Displays employee details, throws employee number
                 }
                 case "2" -> System.out.println("Thank you for using the program. ");
                 default -> System.out.println("Incorrect input.");//Wrong input
             }
     }
     
-    public static int credentialCheck(String username, String password){//Checks Credentials
-        String passkey = "12345";//Declare accepted password
-        int user;//Declares usertype to return           
-        if(passkey.equals(password)){//Checks password
+    public static int credentialCheck(){//Checks Credentials
+        int user;//Declares usertype to return     
+        System.out.println("Username: ");       
+        String username = scanner.nextLine();//Asks for username      
+        System.out.println("Password: ");       
+        String password = scanner.nextLine();//Asks for password
+        if(password.equals("12345")){//Checks password
             switch(username){//Checks username
                 case "employee" -> user = 1;//Returns 1 for employee
                 case "payroll_staff" -> user = 2;//Returns 2 for payroll staff
@@ -252,11 +281,7 @@ public class CompProg1 {
     }
     
     public static void main(String[] args) {
-        System.out.println("Username: ");       
-        String Name = scanner.nextLine();//Asks for username      
-        System.out.println("Password: ");       
-        String Code = scanner.nextLine();//Asks for password
-        int userType = credentialCheck(Name, Code);//Checks credentials, throws username and password to method
+        int userType = credentialCheck();//Checks credentials, throws username and password to method
         switch(userType){//Checks user type
                 case 1 -> employeeOptions();//Employee
                 case 2 -> payrollOptions();//Payroll Staff
