@@ -25,20 +25,20 @@ public class CompProg1 {
         if(gross > 25000.00){ //Checks if the gross salary exceeds the highest bracket
             gross = 25000.00; //Places a cap on the contribution once the gross salary exceeds the highest bracket
         }
-        String data; //Declared string to store the line from CSV
+        String fileLine; //Declared string to store the line from CSV
         //Try Catch error handler used
         //Buffered Reader used
         //Used Relative Address of File
         try (BufferedReader reader = new BufferedReader(new FileReader("resources/SSS Contribution Brackets.csv"))) {
             //While loop to read the whole file
-            //Simultaneously stores the currently read line to String data
+            //Simultaneously stores the currently read line to String fileLine
             //Will loop until it reaches the end of the line, where it would equal null
-            while ((data = reader.readLine()) != null) {
-                String[] details = data.split(","); //Split will check the line for "," and will split the line there
-                double lower = Double.parseDouble(details[0]); //Assigns the lower value of the bracket to lower
-                double higher = Double.parseDouble(details[1]); //Assigns the higher value of the bracket to higher
+            while ((fileLine = reader.readLine()) != null) {
+                String[] bracketDetails = fileLine.split(","); //Split will check the line for "," and will split the line there
+                double lower = Double.parseDouble(bracketDetails[0]); //Assigns the lower value of the bracket to lower
+                double higher = Double.parseDouble(bracketDetails[1]); //Assigns the higher value of the bracket to higher
                 if((lower<=gross)&&(higher>=gross)){ //Checks which bracket the gross salary is in
-                    deduct = Double.parseDouble(details[2]); //Assigns the found deduction in the CSV file to deduct
+                    deduct = Double.parseDouble(bracketDetails[2]); //Assigns the found deduction in the CSV file to deduct
                 }
             }
         }
@@ -75,23 +75,23 @@ public class CompProg1 {
     
     public static double taxDeduct(double gross){ //Calculates the Withholding tax deduction by comparing taxable salary to the data in the CSV file
         double deduct = 0; //Declares deduct which will store the calculated deduction
-        String data; //Declared string to store the line from CSV
+        String fileLine; //Declared string to store the line from CSV
         //Try Catch error handler used
         //Buffered Reader used
         //Used Relative Address of File
         try (BufferedReader reader = new BufferedReader(new FileReader("resources/Withholding Tax Brackets.csv"))) {
             //While loop to read the whole file
-            //Simultaneously stores the currently read line to String data
+            //Simultaneously stores the currently read line to String fileLine
             //Will loop until it reaches the end of the line, where it would equal null
-            while ((data = reader.readLine()) != null) {
-                String[] details = data.split(","); //Split will check the line for "," and will split the line there
-                double lower = Double.parseDouble(details[0]); //Assigns the first value of the CSV file to lower
-                double higher = 0+Double.parseDouble(details[1]); //Assigns the second value of the CSV file to higher
+            while ((fileLine = reader.readLine()) != null) {
+                String[] bracketDetails = fileLine.split(","); //Split will check the line for "," and will split the line there
+                double lower = Double.parseDouble(bracketDetails[0]); //Assigns the first value of the CSV file to lower
+                double higher = 0+Double.parseDouble(bracketDetails[1]); //Assigns the second value of the CSV file to higher
                 if(gross>=666667){ //Checks if the taxable salary is in the highest bracket
                     higher = gross;
                 }
                 if((lower<=gross)&&(higher>=gross)){ //Checks which bracket the taxable salary is in
-                    deduct = ((gross-lower)*Double.parseDouble(details[2]))+Double.parseDouble(details[3]); //Calculates the deduction based on where the bracket is and assigns it to deduct
+                    deduct = ((gross-lower)*Double.parseDouble(bracketDetails[2]))+Double.parseDouble(bracketDetails[3]); //Calculates the deduction based on where the bracket is and assigns it to deduct
                 }
             }
         }
@@ -142,7 +142,7 @@ public class CompProg1 {
     public static void processPayroll(String employeeNumber, double rate){ //Takes the employee number and reads the attendance logs to get the data to process the payroll
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("H:mm"); //Hour Format, only 1 H because listed data writes X:00 instead of 0X:00
         DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy"); //Date Format to read dates from file
-        String data; //Declared string to store the line from CSV
+        String fileLine; //Declared string to store the line from CSV
         LocalDate month = LocalDate.parse("2024-06-01"); //Declares the start of the first month to check
         LocalDate cutoff = month.plusDays(15); //Declares the start of the first cutoff relative to the first month
         double hoursWorked1 = 0; //Declares where to store the calculated hours for the first cutoff
@@ -152,14 +152,14 @@ public class CompProg1 {
         //Used Relative Address of File
         try (BufferedReader reader = new BufferedReader(new FileReader("resources/Attendance Record.csv"))) {
             //While loop to read the whole file
-            //Simultaneously stores the currently read line to String data
+            //Simultaneously stores the currently read line to String fileLine
             //Will loop until it reaches the end of the line, where it would equal null
-            while ((data = reader.readLine()) != null) {
-                String[] details = data.split(","); //Split will check the line for "," and will split the line there
-                if(details[0].contains("Employee")){ //Skips the first loop if the code detects that the line is reading the header
+            while ((fileLine = reader.readLine()) != null) {
+                String[] attendanceLogs = fileLine.split(","); //Split will check the line for "," and will split the line there
+                if(attendanceLogs[0].contains("Employee")){ //Skips the first loop if the code detects that the line is reading the header
                     continue;
                 }
-                LocalDate current = LocalDate.parse(details[3], dateFormat); //Assigns the date of the log to LocalDate current
+                LocalDate current = LocalDate.parse(attendanceLogs[3], dateFormat); //Assigns the date of the log to LocalDate current
                 if (current.isAfter(month.plusMonths(1)) || current.isEqual(month.plusMonths(1))){ //Checks if the current month being worked on is correct, if not it adjusts it
                     displayResults(hoursWorked1,hoursWorked2,rate,month,cutoff); //Displays the results of the previous month before moving on to the next month
                     month = month.plusMonths(1); //Adjusts the current month to the next one
@@ -167,12 +167,12 @@ public class CompProg1 {
                     hoursWorked1 = 0; //Resets hoursWorked1 for the new month
                     hoursWorked2 = 0; //Resets hoursWorked2 for the new month
                 }
-                if (details[0].contains(employeeNumber)) { //Checks the CSV file for the matching employee number and calls the method "calcHours" to compute the total hours worked
+                if (attendanceLogs[0].contains(employeeNumber)) { //Checks the CSV file for the matching employee number and calls the method "calcHours" to compute the total hours worked
                     if ((current.isEqual(month) || current.isAfter(month)) && current.isBefore(cutoff)) { //Checks if the hours calculated would be added to the first cutoff
-                        hoursWorked1 += calcHours(LocalTime.parse(details[4], timeFormat), LocalTime.parse(details[5], timeFormat)); //hoursWorked1 stores all the hours calculated for the first cutoff
+                        hoursWorked1 += calcHours(LocalTime.parse(attendanceLogs[4], timeFormat), LocalTime.parse(attendanceLogs[5], timeFormat)); //hoursWorked1 stores all the hours calculated for the first cutoff
                     }
                     if ((current.isEqual(cutoff) || current.isAfter(cutoff)) && current.isBefore(month.plusMonths(1))) { //Checks if the hours calculated would be added to the second cutoff
-                        hoursWorked2 += calcHours(LocalTime.parse(details[4], timeFormat), LocalTime.parse(details[5], timeFormat)); //hoursWorked1 stores all the hours calculated for the second cutoff
+                        hoursWorked2 += calcHours(LocalTime.parse(attendanceLogs[4], timeFormat), LocalTime.parse(attendanceLogs[5], timeFormat)); //hoursWorked1 stores all the hours calculated for the second cutoff
                     }
                 }  
             }
@@ -189,21 +189,21 @@ public class CompProg1 {
         //Buffered Reader used
         //Used Relative Address of File
         try (BufferedReader reader = new BufferedReader(new FileReader("resources/Employee Details.csv"))) {
-                String data; //Declares string to handle currently read line by Reader
+                String fileLine; //Declares string to handle currently read line by Reader
                 //While loop to read the whole file
-                //Simultaneously stores the currently read line to String data
+                //Simultaneously stores the currently read line to String fileLine
                 //Will loop until it reaches the end of the line, where it would equal null
-                while ((data = reader.readLine()) != null) {
-                    String[] details = data.split(","); //Split will check the line for "," and will split the line there
-                    if(details[0].contains(employeeNumber)){ //Checks each line if the thrown employee number matches the data on file
+                while ((fileLine = reader.readLine()) != null) {
+                    String[] employeeDetails = fileLine.split(","); //Split will check the line for "," and will split the line there
+                    if(employeeDetails[0].contains(employeeNumber)){ //Checks each line if the thrown employee number matches the data on file
                         //String array declared to handle the splitting of the line
-                        //"data" will be split into an array called "details[]"
+                        //"fileLine" will be split into an array called "employeeDetails[]"
                         System.out.println("----------------------------------\n"); 
-                        System.out.println("1. Employee #: " +details[0]); //Displays Employee Number
-                        System.out.println("2. Employee Name: " +details[2]+ " " +details[1]); //Displays Employee Name, First name then Last name
-                        System.out.println("3. Employee Birthday: " +details[3]); //Displays Birthday
+                        System.out.println("1. Employee #: " +employeeDetails[0]); //The first item in the CSV file is the employee number, which is displayed here
+                        System.out.println("2. Employee Name: " +employeeDetails[2]+ " " +employeeDetails[1]); //The second and third items in the CSV file is the employee name, which is displayed here
+                        System.out.println("3. Employee Birthday: " +employeeDetails[3]); //The fourth item in the CSV file is the employee birthday, which is displayed here
                         System.out.println("\n----------------------------------");
-                        hourlyRate = Double.parseDouble(details[details.length-1]); //Parses the found string in the last part of the array, which is the hourly rate
+                        hourlyRate = Double.parseDouble(employeeDetails[employeeDetails.length-1]); //The last item in the CSV file is the hourly rate, this code parses that into double and stores it into hourlyRate
                     }
                 }
                if(hourlyRate == 0){ //Since the employee number was not found, hourly rate stays 0
